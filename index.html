@@ -689,6 +689,64 @@
     </div>
 
     <script>
+        // URL de Google Apps Script
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEawh8rsZRoABWjWkVBs7NPi8KHC5dhJsCN7z_G-M_yaaQ69mb50-vvGlLaICi8aX8/exec";
+
+        function recolectarDatos() {
+            return {
+                nid: document.getElementById('nidHeader').value,
+                telefono: document.getElementById('phoneHeader').value,
+                tipificacion: document.getElementById('tipificacion').value,
+                tipoCliente: document.getElementById('tipoCliente').value,
+                nombreContacto: document.getElementById('nombreContacto').value,
+                telefonoAlterno: document.getElementById('telefonoAlterno').value,
+                ciudad: document.getElementById('ciudad').value,
+                localidad: document.getElementById('localidad').value,
+                direccion: document.getElementById('direccionNombre').value,
+                tipoInmueble: document.getElementById('tipoInmueble').value,
+                torre: document.getElementById('torre').value,
+                piso: document.getElementById('piso').value,
+                conjunto: document.getElementById('conjunto').value,
+                antiguedad: document.getElementById('antiguedad').value,
+                areaConstituida: document.getElementById('areaConstituida').value,
+                habitaciones: document.getElementById('habitaciones').value,
+                parqueaderos: document.getElementById('parqueaderos').value,
+                banosCompletos: document.getElementById('banosCompletos').value,
+                banosMedios: document.getElementById('banosMedios').value,
+                valor: document.getElementById('valor').value,
+                gravamen: document.getElementById('gravamen').value,
+                valorAdmin: document.getElementById('valorAdminsitracion').value,
+                estrato: document.getElementById('estrato').value,
+                obraGris: document.getElementById('obraGrisSi').checked ? 'Sí' : (document.getElementById('obraGrisNo').checked ? 'No' : ''),
+                balcon: document.getElementById('balconSi').checked ? 'Sí' : (document.getElementById('balconNo').checked ? 'No' : '')
+            };
+        }
+
+        function enviarAGoogleSheets(datos) {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(datos)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarExito();
+                } else {
+                    alert('Error al guardar: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error de conexión: ' + error);
+            });
+        }
+
+        function mostrarExito() {
+            document.getElementById('modalMessage').innerHTML = '<div class="message success">✓ Datos enviados correctamente a Google Sheets</div><div class="message success">✓ El registro se guardó en la hoja de cálculo</div>';
+            document.getElementById('modalScore').textContent = '100%';
+            document.getElementById('modal').classList.add('active');
+        }
+
         function actualizarCamposTorre() {
             const tipoInmueble = document.getElementById('tipoInmueble').value;
             const grupoTorre = document.getElementById('grupoTorre');
@@ -696,7 +754,6 @@
             const torreInput = document.getElementById('torre');
             const pisoInput = document.getElementById('piso');
 
-            // Mostrar Torre y Piso solo si es Edificio o Apartamento
             if (tipoInmueble === 'edificio' || tipoInmueble === 'apartamento') {
                 grupoTorre.style.display = 'block';
                 grupoPiso.style.display = 'block';
@@ -721,26 +778,19 @@
         }
 
         function abrirTab(nombreTab) {
-            // Ocultar todos los tabs
             const tabs = document.querySelectorAll('.tab-content');
             tabs.forEach(tab => tab.classList.remove('active'));
 
-            // Quitar clase activa de todos los botones
             const botones = document.querySelectorAll('.tab');
             botones.forEach(btn => btn.classList.remove('active'));
 
-            // Mostrar tab seleccionado
             document.getElementById(nombreTab).classList.add('active');
-
-            // Marcar botón como activo
             event.target.classList.add('active');
 
-            // Actualizar progreso
             actualizarProgreso();
         }
 
         function actualizarProgreso() {
-            // Verificar cada sección
             const contactoCompleto = verificarContacto();
             const direccionCompleta = verificarDireccion();
             const detallesCompletos = verificarDetalles();
@@ -753,7 +803,7 @@
         function verificarContacto() {
             return document.getElementById('tipoCliente').value !== '' &&
                    document.getElementById('nombreContacto').value !== '' &&
-                   document.getElementById('telefono').value !== '';
+                   document.getElementById('phoneHeader').value !== '';
         }
 
         function verificarDireccion() {
@@ -768,11 +818,10 @@
             const tipoInmueble = document.getElementById('tipoInmueble').value;
             let pisoRequerido = false;
             
-            // Piso es requerido solo para Edificio y Apartamento
             if (tipoInmueble === 'edificio' || tipoInmueble === 'apartamento') {
                 pisoRequerido = document.getElementById('piso').value !== '';
             } else {
-                pisoRequerido = true; // No es requerido para Casa o Casa en conjunto
+                pisoRequerido = true;
             }
 
             return document.getElementById('antiguedad').value !== '' &&
@@ -832,6 +881,13 @@
                 mensaje += '<div class="message error">✗ Completa la sección Detalles</div>';
             }
 
+            if (puntuacion === 100) {
+                // Enviar a Google Sheets
+                const datos = recolectarDatos();
+                enviarAGoogleSheets(datos);
+                return; // No mostrar modal aún
+            }
+
             let resultado = '';
             if (puntuacion === 100) {
                 resultado = '🎉 ¡Perfecto! Completaste el formulario correctamente.';
@@ -853,7 +909,6 @@
             document.getElementById('modal').classList.remove('active');
         }
 
-        // Cerrar modal al hacer clic fuera
         window.onclick = function(event) {
             const modal = document.getElementById('modal');
             if (event.target == modal) {
